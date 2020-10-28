@@ -90,26 +90,26 @@ app.get('/users', async (req, res) => {
     res.send(foundUsers);
 })
 
-// Get user by ID TODO It's sending something but not sure what
-app.get('/user/:UserId', async (req, res) => {
-   const reqUserId = await UserModel.find({_id:req.params.id}).populate('User');
+// Get user by ID
+app.get('/user/:id', async (req, res) => {
+   const reqUserId = await UserModel.findById(req.params.id).populate('cart');
    res.send(reqUserId ? reqUserId : 404);
 });
 
-// Get a store item by ID TODO Maybe working? It's sending something but not sure what
-app.get('/StoreItem/:storeItemId', async (req, res) => {
+// Get a store item by ID
+app.get('/StoreItem/:id', async (req, res) => {
     let reqStoreItemId = await StoreItemModel.find({_id:req.params.id}).populate('StoreItem');
 
     res.send(reqStoreItemId ? reqStoreItemId : 404);
 });
 
-// Get the cart of a specified user TODO might be working? just sends []
+// Get the cart of a specified user
 app.get('/user/:UserId/cart', async (req, res) => {
-    let foundUser = await UserModel.find({_id:req.params.id}).populate('cart');
+    let foundUser = await UserModel.find({_id:req.params.UserId}).populate('cart');
     res.send(foundUser ? foundUser : 404);
 });
 
-// Get a store item regex query of part of the item's name THIS ONE WORKS
+// Get a store item regex query of part of the item's name
 app.get('/StoreItem', async (req, res) => {
     let foundStoreItem = await StoreItemModel.find({
     storeItemName: new RegExp(req.query.storeItemName)
@@ -128,10 +128,11 @@ app.post('/user', async(req, res) => {
     res.send(newUser ? newUser : 500);
 })
 
-// Add a new item to specified user's cart TODO How do I do this?
-app.post('/cart/:UserId/cartItem', async (req, res) => {
-
-    const newcartitem = await UserModel.cart.create(req.body);
+// Add a new item to specified user's cart TODO fix this
+app.post('/cart/:id/cartItem', async (req, res) => {
+    const foundUserForItem1 = await UserModel.findById(req.params.id);
+    const newcartitem = foundUserForItem1.cart.push(req.body);
+    foundUserForItem1.save();
     res.send(newcartitem ? newcartitem : 500);
 
 })
@@ -139,20 +140,20 @@ app.post('/cart/:UserId/cartItem', async (req, res) => {
 /********************************************************
  * DELETE functions to delete specified entries         *
  ********************************************************/
-// Empties specific user's cart TODO does not work
+// Empties specific user's cart
 app.delete('/user/:UserId/cart', async(req, res) => {
 
-    const deleteUserCart = await UserModel.find({_id:req.params.id}).populate('cart');
-    if(deleteUserCart){
-        deleteUserCart.cart.clear();
-    }
-    res.send(deleteUserCart ? deleteUserCart : 404);
+    const foundUser1 = await UserModel.findById(req.params.UserId).populate('cart');
+    const deletedItem = foundUser1.cart.pop() // NOTE: this removes the last element from the cart. Call until cart empty.
+    await foundUser1.save();
+    res.send(deletedItem ? deletedItem : 404);
 });
-//Deletes the index of the item in the specified user's cart and sends remaining items back PROB SAME ISSUE
+//Deletes the index of the item in the specified user's cart and sends remaining items back
 app.delete('/cart/:UserId/:cartItemId', async (req, res) => {
-    const deletedCartItem = await UserModel.findByIdAndDelete(req.params.id).populate('cart');
-
-    res.send(deletedCartItem ? deletedCartItem : 404);
+    const founduser = await UserModel.findById(req.params.UserId).populate('cart');
+    const deleteditem = founduser.cart.pull(req.params.cartItemId)
+    await founduser.save();
+    res.send(deleteditem ? deleteditem : 404); // This is sending what is left in the cart, item was deleted
 });
 
 app.listen(3000);
