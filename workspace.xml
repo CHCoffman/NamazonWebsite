@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="b1fa7c1a-8df8-470d-bf82-a168cdc8a001" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ProjectId" id="1i3Clci6uaSpZLkfhJg48ZUzjPc" />
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/.idea/Namazon-Website" />
+    <property name="vue.rearranger.settings.migration" value="true" />
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b1fa7c1a-8df8-470d-bf82-a168cdc8a001" name="Default Changelist" comment="" />
+      <created>1601127042801</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1601127042801</updated>
+      <workItem from="1601127046648" duration="78000" />
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="588" y="187" key="FileChooserDialogImpl" timestamp="1601127119542">
+      <screen x="78" y="0" width="1458" height="864" />
+    </state>
+    <state x="588" y="187" key="FileChooserDialogImpl/78.0.1458.864/-1920.0.1858.1080@78.0.1458.864" timestamp="1601127119542" />
+  </component>
+</project>
