@@ -1,13 +1,16 @@
 const express = require('express');
 const axios = require('axios');
 const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
 const url = 'mongodb+srv://dbUser:dbUserPassword@projects.kxoe5.mongodb.net/NamazonDB?retryWrites=true&w=majority';
 const UserModel = require('./User');
 const StoreItemModel = require('./StoreItem');
 const CartItemModel = require('./CartItem');
 const app = express();
 app.use(express.json());
-//
+const router = express.Router();
+
 const dbName = 'NamazonDB';
 
 // API Key for randommer imports
@@ -22,6 +25,11 @@ let database;
 const initDatabase = async () => {
     database = await mongoose.connect(url);
     if (database) {
+        app.use(session({
+            secret: "allYourBaseAreBelongToUs",
+            store: new MongoStore({mongooseConnection: mongoose.connection})
+        }));
+        app.use(router);
         console.log("Successfully connected to my DB");
     } else {
         console.log("error connecting to my DB");
@@ -79,41 +87,53 @@ const initializeData = async () => {
     await getStoreItems();
     await getNameDataInParallel();
 }
-//initializeData();
+//initializeData(); // uncomment to populate the database
 
 /********************************************************
  * GET functions to return requested information        *
  ********************************************************/
+
 // Get all of the users
-app.get('/users', async (req, res) => {
+router.get('/users', async (req, res) => {
     const foundUsers = await UserModel.find().populate('User');
     res.send(foundUsers);
 })
 
 // Get user by ID
-app.get('/user/:id', async (req, res) => {
+router.get('/user/:id', async (req, res) => {
    const reqUserId = await UserModel.findById(req.params.id).populate('cart');
    res.send(reqUserId ? reqUserId : 404);
 });
 
 // Get a store item by ID
-app.get('/StoreItem/:id', async (req, res) => {
+router.get('/StoreItem/:id', async (req, res) => {
     let reqStoreItemId = await StoreItemModel.find({_id:req.params.id}).populate('StoreItem');
-
+    if(!req.session.lastItemsViewed){
+        req.session.lastItemsViewed = [reqStoreItemId];
+    }
+    else{
+        req.session.lastItemsViewed.push(reqStoreItemId);
+    }
     res.send(reqStoreItemId ? reqStoreItemId : 404);
 });
 
 // Get the cart of a specified user
-app.get('/user/:UserId/cart', async (req, res) => {
+router.get('/user/:UserId/cart', async (req, res) => {
     let foundUser = await UserModel.find({_id:req.params.UserId}).populate('cart');
     res.send(foundUser ? foundUser : 404);
 });
 
 // Get a store item regex query of part of the item's name
-app.get('/StoreItem', async (req, res) => {
+router.get('/StoreItem', async (req, res) => {
     let foundStoreItem = await StoreItemModel.find({
     storeItemName: new RegExp(req.query.storeItemName)
     }).populate('storeitems');
+    if(!req.session.lastItemsViewed){
+        req.session.lastItemsViewed = [foundStoreItem];
+    }
+    else{
+        req.session.lastItemsViewed.push(foundStoreItem);
+    }
     res.send(foundStoreItem ? foundStoreItem : 404);
 });
 
@@ -121,15 +141,15 @@ app.get('/StoreItem', async (req, res) => {
  * POST functions to create new entries                 *
  ********************************************************/
 
-// Create a user using a post THIS WORKS, although no idea about cart
-app.post('/user', async(req, res) => {
+// Create a user using a post 
+router.post('/user', async(req, res) => {
 
     const newUser = await UserModel.create(req.body);
     res.send(newUser ? newUser : 500);
 })
 
 // Add a new item to specified user's cart TODO fix this
-app.post('/cart/:id/cartItem', async (req, res) => {
+router.post('/cart/:id/cartItem', async (req, res) => {
     const foundUserForItem1 = await UserModel.findById(req.params.id);
     const newcartitem = foundUserForItem1.cart.push(req.body);
     foundUserForItem1.save();
@@ -140,8 +160,9 @@ app.post('/cart/:id/cartItem', async (req, res) => {
 /********************************************************
  * DELETE functions to delete specified entries         *
  ********************************************************/
+
 // Empties specific user's cart
-app.delete('/user/:UserId/cart', async(req, res) => {
+router.delete('/user/:UserId/cart', async(req, res) => {
 
     const foundUser1 = await UserModel.findById(req.params.UserId).populate('cart');
     const deletedItem = foundUser1.cart.pop() // NOTE: this removes the last element from the cart. Call until cart empty.
@@ -149,7 +170,7 @@ app.delete('/user/:UserId/cart', async(req, res) => {
     res.send(deletedItem ? deletedItem : 404);
 });
 //Deletes the index of the item in the specified user's cart and sends remaining items back
-app.delete('/cart/:UserId/:cartItemId', async (req, res) => {
+router.delete('/cart/:UserId/:cartItemId', async (req, res) => {
     const founduser = await UserModel.findById(req.params.UserId).populate('cart');
     const deleteditem = founduser.cart.pull(req.params.cartItemId)
     await founduser.save();
