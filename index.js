@@ -116,7 +116,11 @@ router.get('/StoreItem/:id', async (req, res) => {
     }
     res.send(reqStoreItemId ? reqStoreItemId : 404);
 });
+// Get last items viewed TODO NOT WORKING
+router.get('/StoreItem/Recent/', async(req, res) => {
 
+    res.send(req.session);
+});
 // Get the cart of a specified user
 router.get('/user/:UserId/cart', async (req, res) => {
     let foundUser = await UserModel.find({_id:req.params.UserId}).populate('cart');
