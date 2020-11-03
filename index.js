@@ -1,16 +1,21 @@
 const express = require('express');
 const axios = require('axios');
+
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
 const url = 'mongodb+srv://dbUser:dbUserPassword@projects.kxoe5.mongodb.net/NamazonDB?retryWrites=true&w=majority';
+
 const UserModel = require('./User');
 const StoreItemModel = require('./StoreItem');
 const CartItemModel = require('./CartItem');
+
+const jwt = require('jsonwebtoken');
+const accessTokenSecret = "upDownLeftRightUpDownLeftRight";
+
 const app = express();
 app.use(express.json());
 const router = express.Router();
-
 const dbName = 'NamazonDB';
 
 // API Key for randommer imports
@@ -54,6 +59,8 @@ const getNameDataInParallel = async () => {
                 firstName: results[0].data[j],
                 lastName: results[1].data[j]
             },
+            login: `${results[0].data[j]}.${results[1].data[j]}`,
+            password: 'userPw',
             cart: [],
             email: results[0].data[j] + results[1].data[j] + "@ex.com"
         };
@@ -180,5 +187,40 @@ router.delete('/cart/:UserId/:cartItemId', async (req, res) => {
     await founduser.save();
     res.send(deleteditem ? deleteditem : 404); // This is sending what is left in the cart, item was deleted
 });
+
+/********************************************************
+ * JWT routes. Create jwt token and require for routes  *
+ ********************************************************/
+
+// require token for routes
+app.use(async (req, res, next) =>{
+    try {
+        const authHeader = req.headers.authorization;
+        if (authHeader) {
+            const jwtToken = authHeader.split(' ')[1];
+            const user = jwt.verify(jwtToken, accessTokenSecret);
+            req.user = user;
+        }
+    }
+    catch(err){
+        res.send(403);
+    }
+    next();
+})
+
+// create access token if the user has a valid login
+router.post('/user/login', async(req, res) => {
+    const {login, password} = req.body;
+    const foundUser = await UserModel.findOne({login, password});
+
+    if(foundUser){
+        // user found, create token
+        const accessToken = jwt.sign({user:foundUser}, accessTokenSecret);
+        res.send(accessToken);
+    }else{
+        res.send(403);
+    }
+})
+
 
 app.listen(3000);
